@@ -1,0 +1,38 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
+# Assignment 1, Setting Up R
+# By Jeremy Glasgow
+# jglasgo2@kent.edu
+
+```{r}
+# 1
+# install.packages("ISLR")
+```
+
+```{r}
+# 2
+library("ISLR")
+data(Carseats)
+summary(Carseats)
+cat("Number of rows in the Carseats dataset: ", nrow(Carseats))
+```
+
+```{r}
+# 3
+cat("Max advertising attribute: ", max(Carseats$Advertising))
+```
+```{r}
+# 4
+cat ("IQR of Price attribute: ", IQR(Carseats$Price))
+```
+```{r}
+# 5
+plot(Carseats$Sales, Carseats$Price)
+cat("Plotting Sales vs Price suggests a slight negative correlation between the two variables.")
+cat("The correlation coefficient of Sales vs Price is: ", cor(Carseats$Sales, Carseats$Price), "\n")
+cat("The correlation coefficient suggests a moderate negative correlation. ")
+```
+

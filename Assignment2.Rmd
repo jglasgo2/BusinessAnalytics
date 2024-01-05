@@ -1,0 +1,156 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
+# Assignment 2, Online Retail Analytics
+# By Jeremy Glasgow
+# jglasgo2@kent.edu
+```{r}
+# read in csv into dataframe
+data <- read.csv("Online_Retail.csv")
+```
+
+```{r}
+# 1
+countryCount <- as.data.frame(table(data$Country))
+colnames(countryCount) <- c("Country", "TotalTransactions")
+totalCount <- nrow(data)
+countryCount$PercentageOfTotal <- (countryCount$TotalTransactions / totalCount) * 100
+print(subset(countryCount, PercentageOfTotal > 0))
+```
+
+```{r}
+# 1
+print(subset(countryCount, PercentageOfTotal > 1))
+```
+
+```{r}
+# 2
+data$TransactionValue <- data$Quantity * data$UnitPrice
+```
+
+```{r}
+# 3
+countrySumTransactions <- aggregate(data$TransactionValue, by=list(data$Country), sum)
+colnames(countrySumTransactions) <- c("Country", "TransactionValue")
+print(subset(countrySumTransactions, TransactionValue > 0))
+```
+
+```{r}
+# 3
+print(subset(countrySumTransactions, TransactionValue > 130000))
+```
+
+```{r}
+# 4
+Online_Retail <- data
+Online_Retail$InvoiceDate <- format(Online_Retail$InvoiceDate, format="%m/%d/%Y %H:%M", tz="GMT")
+Temp=strptime(Online_Retail$InvoiceDate,format='%m/%d/%Y %H:%M',tz='GMT')
+Online_Retail$New_Invoice_Date <- as.Date(Temp)
+Online_Retail$New_Invoice_Date[20000]- Online_Retail$New_Invoice_Date[10]
+Online_Retail$Invoice_Day_Week= weekdays(Online_Retail$New_Invoice_Date)
+Online_Retail$New_Invoice_Hour = as.numeric(format(Temp, "%H"))
+Online_Retail$New_Invoice_Month = as.numeric(format(Temp, "%m"))
+Online_Retail$TransactionValue <- Online_Retail$Quantity * Online_Retail$UnitPrice
+```
+
+```{r}
+# 4 a
+print(prop.table(table(Online_Retail$Invoice_Day_Week)) * 100)
+```
+
+```{r}
+# 4 b
+dayOfWeekVol <- aggregate(Online_Retail$TransactionValue, by=list(Online_Retail$Invoice_Day_Week), sum)
+dayOfWeekVolPercent <- (dayOfWeekVol$x / sum(dayOfWeekVol$x))
+print(data.frame(Day = dayOfWeekVol$Group.1,
+                 TotalVolume = dayOfWeekVol$x,
+                 Percent = dayOfWeekVolPercent * 100)
+)
+
+```
+```{r}
+# 4 c
+monthVol <- aggregate(Online_Retail$TransactionValue, by=list(Online_Retail$New_Invoice_Month), sum)
+monthPercent <- (monthVol$x / sum(monthVol$x))
+print(data.frame(Month = monthVol$Group.1,
+                 TotalVolume = monthVol$x,
+                 Percent = monthPercent * 100)
+)
+```
+```{r}
+# 4 d
+austrailiaTransactions <- table(Online_Retail[Online_Retail$Country == "Australia", ]$New_Invoice_Date)
+highestTransactionDate <- names(which.max((austrailiaTransactions)))
+cat("Date with most transactions: ", highestTransactionDate)
+```
+```{r}
+# 4 e
+between07and20 <- function(datetime) {
+  if (inherits(datetime, 'POSIXct')) {
+    hour <- as.numeric(format(datetime, "%H"))
+    return(hour >= 7 && hour <= 20)
+  }
+}
+tempVector <- unlist(lapply(Online_Retail$InvoiceDate, between07and20))
+fltrd <- Online_Retail[tempVector, ]
+print(fltrd)
+
+```
+
+```{r}
+# 5
+germanyTransactions <- data[data$Country == "Germany", "TransactionValue"]
+hist(germanyTransactions,
+     main = "Germany Total Transaction Values",
+     xlab = "Transaction Value",
+     ylab = "Frequency"
+     )
+```
+
+```{r}
+# 6
+cat("Customer with the most transactions is :", names(which.max(table(data$CustomerID))))
+cat("\nCustomer with the highest number of total transactional value is :", names(which.max(tapply(data$TransactionValue, data$CustomerID, sum))))
+```
+
+```{r}
+# 7
+percentMissing <- colMeans(is.na(data)) * 100
+print(data.frame(Variable = names(percentMissing), MissingPercentage = percentMissing))
+```
+
+```{r}
+# 8
+missingTransactions = data[is.na(data$CustomerID), ]
+missingByCountry = table(missingTransactions$Country)
+print(missingByCountry)
+```
+
+```{r}
+# 9 - attempted number 4, 9 I was unable to complete this one.
+```
+
+```{r}
+# 10
+totalFranceTransactions <- nrow(data[data$Country == "France", ])
+canceledFranceTransactions <- nrow(data[data$Country == "France" & substr(data$InvoiceNo, 1, 1) == 'C', ])
+rr <- canceledFranceTransactions / totalFranceTransactions
+cat("France rate of return is :", rr)
+```
+
+```{r}
+# 11
+revenueByProduct <- aggregate(data$TransactionValue, by=list(data$StockCode), sum)
+colnames(revenueByProduct) <- c("StockCode", "TotalRevenue")
+bestProduct <- revenueByProduct[which.max(revenueByProduct$TotalRevenue), ]
+cat("Product with the most revenue is:\n")
+print(bestProduct$StockCode[1])
+```
+
+```{r}
+# 12
+uniqueCustomers <- length(unique(data$CustomerID))
+cat("Number of unique customers in the dataset: ", uniqueCustomers)
+```

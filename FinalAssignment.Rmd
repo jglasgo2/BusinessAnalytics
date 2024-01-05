@@ -1,0 +1,88 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
+```{r}
+# import caret 
+if (!requireNamespace("caret", quietly = TRUE)) {
+  install.packages("caret")
+}
+library(caret)
+```
+
+```{r}
+# import pROC 
+if (!requireNamespace("pROC", quietly = TRUE)) {
+  install.packages("pROC")
+}
+library(pROC)
+```
+
+
+```{r}
+# read in Churn Train.csv
+churnTrain <- read.csv("Churn_Train.csv")
+
+# create churn column 
+churnTrain$churn <- factor(churnTrain$churn, levels = c("yes", "no"))
+
+# drop entire row if a single NaN value is found
+churnTrain <- na.omit(churnTrain)
+
+# create a control for cross-validation to evaluate different models
+ctrl <- trainControl(method = "cv", number = 5, summaryFunction = twoClassSummary, classProbs = TRUE)
+```
+
+
+```{r}
+# evaluating different models
+# glm = generalized linear model
+# rf = random forest
+# knn = k-nearest neighbors
+# gbm = stochastic gradient boosting
+# rpart = recursive partitioning (type of decision tree using binary splits)
+models <- c("glm", "rf", "knn", "gbm", "rpart")
+
+results <- list()
+
+for (model in models) {
+  set.seed(47)
+  if (model == "rpart") {
+    currentModel <- train(churn ~ ., data = churnTrain, method = "rpart", trControl = ctrl, metric = "ROC")
+  }
+  else {
+    currentModel <- train(churn ~ ., data = churnTrain, method = model, trControl = ctrl, metric = "ROC")
+  }
+  results[[model]] <- currentModel
+  
+  curve <- roc(churnTrain$churn, as.numeric(predict(currentModel, newdata = churnTrain, type = "prob")[, "yes"]))
+  plot(curve, main = paste("ROC Curve -", model), col = "blue", lwd = 2)
+  abline(a = 0, b = 1, col = "red", lwd = 2, lty = 2)
+}
+
+# visual observations based on the plots using roc
+# glm - good choice, but no parameter tuning options 
+# rf - perfect roc curve which indicates overfitting
+# knn - not as good as glm, less accurate
+# gbm - best model 
+# rpart - worst model
+```
+
+```{r}
+# display all results of models
+results
+```
+```{r}
+# using ROC Reciever Operating Curve as metric for model evaluation
+bestROC <- which.max(sapply(results, function(model) max(model$results$ROC)))
+bestModel <- results[[names(results)[bestROC]]]
+bestModel
+```
+
+
+
+```{r}
+Churn_Prob<-predict(bestModel, newdata=Customers_To_Predict, type = 'raw')
+```
+

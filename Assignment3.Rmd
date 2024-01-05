@@ -1,0 +1,126 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
+# Assignment 2, Regression
+# By Jeremy Glasgow
+# jglasgo2@kent.edu
+```{r}
+# 1 a plot
+set.seed(2017)
+X=runif(100)*10
+Y=X*4+3.45
+Y=rnorm(100)*0.29*Y+Y
+plot(X, Y, main="Plotting X against Y", xlab="X Axis", ylab="Y Axis")
+```
+```{r}
+# 1 a explanation
+cat("Based on the plot above, there seems to be a moderate positive correlation \nbetween X and Y.")
+```
+
+```{r}
+# 1 b 
+linearModel = lm(Y ~ X)
+summary(linearModel)
+```
+```{r}
+# 1 b equation
+rSquared <- summary(linearModel)$r.squared
+rSquaredFormatted <- paste(round(rSquared, 4))
+
+print(paste("Based on the summary results above and an R2 of", rSquaredFormatted, ", there is a \nlinear relationship that would fit to the data."))
+cat("The Linear Equation for this model is: Y = 4.4655 + (3.6108 * X) ")
+cat()
+```
+```{r}
+cc = cor(X, Y)
+cat("Correlation Coefficient: ", cc)
+cat("\nR Squared: ", rSquaredFormatted)
+cat("\nThe values of the correlation coefficient and the R Squared values \nboth showing a strong linear relationship.  These two metrics \nsuggest the regression model fits the data very well.")
+```
+```{r}
+# 2 a
+data(mtcars)
+cat("Before constructing the linear model to find the best predictor of horsepower, \nI believe the best predictor would be MPG.  There are many other factors \nsuch as driving speed, type of engine, AWD vs RWD vs FWD, and person \nbehind the wheel.  The higher the horsepower of the car, the harder it has to work, which \nmeans the more fuel consumption it would need to function.")
+
+weight <- lm(hp ~ wt, data = mtcars)
+mileage <- lm(hp ~ mpg, data = mtcars)
+weightR2 <- summary(weight)$r.squared
+mileageR2 <- summary(weight)$r.squared
+
+cat("\n\nWeight as a predictor to HP has an R2 of:", weightR2)
+cat("\n\nMPG as a predictor to HP has an R2 of:", mileageR2)
+cat("\n\nBased on the findings above or MPG and car weight, their R2 scores are the exact same.")
+
+weightCC <- cor(mtcars$hp, mtcars$wt)
+mileageCC <- cor(mtcars$hp, mtcars$mpg)
+
+cat("\n\nWeight correlation coefficient:", weightCC)
+cat("\n\nMPG correlation coefficient:", mileageCC)
+cat("\n\nBased on the correlation coefficient, weight is the better predictor.  \nBoth R2 and CC indicate weight is the better predictor for horsepower.")
+```
+```{r}
+# 2 b
+data(mtcars)
+newModel <- lm(hp ~ cyl + mpg, data = mtcars)
+predData <- data.frame(cyl = 4, mpg = 22)
+pred <- predict.lm(newModel, newdata = predData)
+cat("The estimated horsepower for a car with a 4 cylinder engine that gets 22 miles \nper gallon is :", pred)
+```
+
+```{r}
+# 3 
+# install.packages('mlbench')
+library(mlbench)
+data(BostonHousing)
+```
+
+```{r}
+# 3 a
+housingModel <- lm(medv ~ crim + zn + ptratio + chas, data = BostonHousing)
+housingR2 <- summary(housingModel)$r.squared
+cat("Boston Housing R2: ", housingR2)
+cat("\nBased on the R2 of the linear model, this falls in the moderately accurate \nclassification.  The cutoff value between weak and moderate is 0.33.  This model is \nbarely in the moderate category and would likely not be a great model to make \npredictions from.")
+```
+```{r}
+# 3 b 1
+chasCC <- housingModel$coefficients['chas1']
+explanation <- paste("The only value in the linear model equation that would \nchange would be the chas1 value. The coefficient of chas1 is", as.numeric(chasCC), "\nwhich would be the price difference between the two home values. \nThe home with the tract bounds to the river would be more expensive by", as.numeric(chasCC))
+cat(explanation)
+```
+
+```{r}
+# 3 b 2
+ptratioCC <- as.numeric(housingModel$coefficients['ptratio'])
+house1 <- as.numeric(ptratioCC * 15)
+house2 <- as.numeric(ptratioCC * 18)
+cat("House 1 with a ratio of 15: ", house1)
+cat("\nHouse 2 with a ratio of 18: ", house2)
+cat("\nDifference: ", as.numeric(house1 - house2))
+cat("\nBased on the ptratios between House 1 and House 2, the lower the \nptratio the higher the price will be.  This means House 1 is $", as.numeric(house1 - house2), " \nmore expensive than House 2.")
+
+```
+```{r}
+# 3 c
+pValues <- summary(housingModel)$coefficients[, 'Pr(>|t|)']
+print(pValues)
+cat("\nBased on the threshold of 0.05, all four of the variables are significant.")
+```
+```{r}
+# 3 d
+# anova using p values
+pAnova <- anova(housingModel)[, "Pr(>F)"]
+pAnovaDF <- data.frame(Variables = rownames(anova(housingModel)), P_Values = pAnova)
+print((pAnovaDF[order(pAnovaDF$P_Values), ]))
+```
+
+```{r}
+# 3 d
+# using f score for anova
+fAnova <- anova(housingModel)
+impOrder <- order(-fAnova$`F value`)
+orderedNames <- rownames(fAnova)[impOrder]
+print(orderedNames)
+```
+
